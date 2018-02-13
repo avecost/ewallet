@@ -35,6 +35,9 @@ func (h *AppHandler) Run() {
 	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.UpdateClientByID).Methods("PUT")
 	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.DeleteClientByID).Methods("DELETE")
 
+	// wallets routes
+	r.HandleFunc("/v1/wallets", h.PostNewWallet).Methods("POST")
+
 	err := http.ListenAndServe(":"+port, r)
 	if err != nil {
 		log.Fatal("Server Error: ", err)
