@@ -29,11 +29,11 @@ func (h *AppHandler) Run() {
 
 	r := mux.NewRouter()
 	// clients routes
-	r.HandleFunc("/v1/clients", h.GetAllClient).Methods("GET")
+	r.HandleFunc("/v1/clients", h.GetAllClients).Methods("GET")
 	r.HandleFunc("/v1/clients", h.PostNewClient).Methods("POST")
-	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.GetClientById).Methods("GET")
-	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.UpdateClientById).Methods("PUT")
-	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.DeleteClientById).Methods("DELETE")
+	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.GetClientByID).Methods("GET")
+	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.UpdateClientByID).Methods("PUT")
+	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.DeleteClientByID).Methods("DELETE")
 
 	err := http.ListenAndServe(":"+port, r)
 	if err != nil {

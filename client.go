@@ -17,22 +17,10 @@ type Client struct {
 	Reference string `json:"reference"`
 	CreatedAt int    `json:"created_at"`
 	UpdatedAt int    `json:"updated_at"`
+	DeletedAt int    `json:"deleted_at"`
+	IsActive  bool   `json:"is_active"`
 
 	Errors map[string]string
-}
-
-type ClientSuccessResponse struct {
-	Version string  `json:"version"`
-	Data    *Client `json:"data"`
-}
-
-type ClientErrorResponse struct {
-	Version string  `json:"version"`
-	Errors  *Client `json:"errors"`
-}
-
-type Clients struct {
-	Clients []Client
 }
 
 // NewClient return a pointer to a client object
@@ -56,9 +44,10 @@ func (c *Client) Create() (int, error) {
 	return lastInsertID, nil
 }
 
-func (c *Client) GetClientById(id int) (int, error) {
-	err := c.db.QueryRow("SELECT id, name, token, address, url, reference, created_at, updated_at FROM clients WHERE id = $1", id).Scan(
-		&c.ID, &c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, &c.CreatedAt, &c.UpdatedAt)
+// GetClientByID return a client record
+func (c *Client) GetClientByID(id int) (int, error) {
+	err := c.db.QueryRow("SELECT id, name, token, address, url, reference, created_at, updated_at, deleted_at, is_active FROM clients WHERE id = $1", id).Scan(
+		&c.ID, &c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt, &c.IsActive)
 	if err != nil {
 		return 0, err
 	}
@@ -66,6 +55,36 @@ func (c *Client) GetClientById(id int) (int, error) {
 	return c.ID, nil
 }
 
+// UpdateClientByID return error of client update
+func (c *Client) UpdateClientByID(id int) error {
+	t := time.Now().Local().Unix()
+
+	_, err := c.db.Exec("UPDATE clients SET name = $1, token = $2, address = $3, url = $4, reference = $5, updated_at = $6, is_active = $7 WHERE id = $8",
+		&c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, t, &c.IsActive, id)
+	if err != nil {
+		return err
+	}
+
+	c.GetClientByID(id)
+
+	return nil
+}
+
+// DeleteClientByID mark record soft-delete
+func (c *Client) DeleteClientByID(id int) error {
+	t := time.Now().Local().Unix()
+
+	_, err := c.db.Exec("UPDATE clients SET deleted_at = $1, is_active = $2 WHERE id = $3", t, false, id)
+	if err != nil {
+		return err
+	}
+
+	c.GetClientByID(id)
+
+	return nil
+}
+
+// Validate return true or false based on validation rule
 func (c *Client) Validate() bool {
 	c.Errors = make(map[string]string)
 
