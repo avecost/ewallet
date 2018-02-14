@@ -36,7 +36,9 @@ func (h *AppHandler) Run() {
 	r.HandleFunc("/v1/clients/{id:[0-9]+}", h.DeleteClientByID).Methods("DELETE")
 
 	// wallets routes
-	r.HandleFunc("/v1/wallets", h.PostNewWallet).Methods("POST")
+	r.HandleFunc("/v1/{clientuuid}/wallets", h.PostNewWallet).Methods("POST")
+	r.HandleFunc("/v1/{clientuuid}/wallets", h.GetAllWallet).Methods("GET")
+	r.HandleFunc("/v1/{clientuuid}/wallets/{id:[0-9]+}", h.GetWalletClientUserIDHandle).Methods("GET")
 
 	err := http.ListenAndServe(":"+port, r)
 	if err != nil {

@@ -23,6 +23,13 @@ type Client struct {
 	Errors map[string]string
 }
 
+// ClientUUID contains (Id, Token, IPAddr)
+type ClientUUID struct {
+	ID     int    `json:"id"`
+	Token  string `json:"token"`
+	IPAddr string `json:"ipaddr`
+}
+
 // NewClient return a pointer to a client object
 func NewClient(db *DBApp) *Client {
 	return &Client{db: db}
@@ -82,6 +89,17 @@ func (c *Client) DeleteClientByID(id int) error {
 	c.GetClientByID(id)
 
 	return nil
+}
+
+// ValidUUID will return
+func (c *Client) ValidUUID(uuid string) (*ClientUUID, bool) {
+	var cUUID ClientUUID
+	c.db.QueryRow("SELECT id, token, ipaddr FROM clients WHERE uuid = $1", uuid).Scan(&cUUID.ID, &cUUID.Token, &cUUID.IPAddr)
+	if cUUID.ID == 0 {
+		return nil, false
+	}
+
+	return &cUUID, true
 }
 
 // Validate return true or false based on validation rule

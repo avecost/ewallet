@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"time"
 )
 
@@ -17,6 +16,8 @@ type Wallet struct {
 	FundType  string  `json:"fund_type"`
 	CreatedAt int     `json:"created_at"`
 	UpdatedAt int     `json:"updated_at"`
+
+	Err map[string]string `json:"errors"`
 }
 
 // NewWallet return a pointer to a new wallet
@@ -31,25 +32,49 @@ func (w *Wallet) Create() (int, error) {
 	cAt := time.Now().Local().Unix()
 	uAt := time.Now().Local().Unix()
 
-	err := w.db.QueryRow("INSERT INTO wallets (client_id, user_id, tag, balance, fund_type, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;",
-		w.ClientID, w.UserID, w.Tag, w.Balance, w.FundType, cAt, uAt).Scan(&lastInsertID)
+	err := w.db.QueryRow("INSERT INTO wallets (client_id, user_id, tag, fund_type, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;",
+		w.ClientID, w.UserID, w.Tag, w.FundType, cAt, uAt).Scan(&lastInsertID)
 	if err != nil {
 		return 0, err
 	}
 	return lastInsertID, nil
 }
 
+// IsUserIDUnique return boolean if UserID is unique for the client
+func (w *Wallet) IsUserIDUnique(clientID, uid int) bool {
+	var cnt int
+	w.db.QueryRow("SELECT count(*) FROM wallets WHERE client_id = $1 AND user_id = $2", clientID, uid).Scan(&cnt)
+	if cnt != 0 {
+		return false
+	}
+	return true
+}
+
+// GetWalletClientUserID return the wallet info for the client user
+func (w *Wallet) GetWalletClientUserID(clientID, uid int) error {
+	err := w.db.QueryRow("SELECT id, client_id, user_id, tag, balance, fund_type, created_at, updated_at FROM wallets WHERE client_id = $1 AND user_id = $2", clientID, uid).Scan(
+		&w.ID, &w.ClientID, &w.UserID, &w.Tag, &w.Balance, &w.FundType, &w.CreatedAt, &w.UpdatedAt)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Validate return true or false based on validation rule
 func (w *Wallet) Validate() bool {
-	c.Errors = make(map[string]string)
+	w.Err = make(map[string]string)
 
-	if strings.TrimSpace(w.ClientID .Name) == "" {
-		c.Errors["name"] = "Name is required"
+	// uuid => url param variable to identify client
+	// token => given to client for identification need to provide for every transaction
+	// user_id => the ID of the user unique for every client
+	// tag => identifier of the wallet
+	// balance => will always be 0.00 for every new wallet [not posted]
+	// fund_type => 'default' kind of fund
+
+	if w.UserID == 0 {
+		w.Err["token"] = "UserID is required"
 	}
 
-	if strings.TrimSpace(c.Token) == "" {
-		c.Errors["token"] = "Token is required"
-	}
-
-	return len(c.Errors) == 0
+	return len(w.Err) == 0
 }
