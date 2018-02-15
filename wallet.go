@@ -60,6 +60,21 @@ func (w *Wallet) IsClientWalletIDExist(clientID, walletID int) bool {
 	return true
 }
 
+// IsAllowedToDebitClientWalletID return bool if Client Wallet ID has enough balance left
+func (w *Wallet) IsAllowedToDebitClientWalletID(clientID, walletID int, amount float32) bool {
+	var recID int
+	var balance float32
+	w.db.QueryRow("SELECT id, balance FROM wallets WHERE client_id = $1 AND user_id = $2", clientID, walletID).Scan(&recID, &balance)
+	switch {
+	case balance == 0:
+		return false
+	case amount > balance:
+		return false
+	default:
+		return true
+	}
+}
+
 // GetWalletClientUserID return the wallet info for the client user
 func (w *Wallet) GetWalletClientUserID(clientID, uid int) error {
 	err := w.db.QueryRow("SELECT id, client_id, user_id, tag, balance, fund_type, created_at, updated_at FROM wallets WHERE client_id = $1 AND user_id = $2", clientID, uid).Scan(

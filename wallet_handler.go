@@ -183,12 +183,6 @@ func (h *AppHandler) PostCreditWalletClientUserIDHandle(w http.ResponseWriter, r
 
 	t.ID = recID
 	response.JSON(w, t, http.StatusOK)
-
-	// TODO:
-	// 	1) validate the provided ID and Token
-	// 	2) check if clientID+UserID has wallet
-	//  3) store the API request to the transactions table
-	//  4) credit the clientID+UserID wallet
 }
 
 // PostDebitWalletClientUserIDHandle handle the Debit of Client User Wallet
@@ -227,6 +221,11 @@ func (h *AppHandler) PostDebitWalletClientUserIDHandle(w http.ResponseWriter, r 
 	wallet := NewWallet(h.db)
 	if !wallet.IsClientWalletIDExist(uuid.ID, walletID) {
 		response.BadRequest(w, "Wallet not existing")
+		return
+	}
+
+	if !wallet.IsAllowedToDebitClientWalletID(uuid.ID, walletID, DrAmount) {
+		response.BadRequest(w, "Insufficient fund")
 		return
 	}
 
