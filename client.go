@@ -27,7 +27,7 @@ type Client struct {
 type ClientUUID struct {
 	ID     int    `json:"id"`
 	Token  string `json:"token"`
-	IPAddr string `json:"ipaddr`
+	IPAddr string `json:"ipaddr"`
 }
 
 // NewClient return a pointer to a client object
