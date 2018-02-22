@@ -103,10 +103,64 @@ func (db *DB) UpdateWalletByIDGUID(id int, guid string, wallet *Wallet) (int64, 
 	return c, nil
 }
 
-// GetWalletStatusByIDGUID check if Wallet is still Active
+// GetWalletStatusByIDGUID check if Wallet is Active
 func (db *DB) GetWalletStatusByIDGUID(id int, guid string) *bool {
 	var active bool
 	db.QueryRow("SELECT is_active FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&active)
 
 	return &active
+}
+
+// IsWalletActiveByIDGUID check if Wallet is active
+func (db *DB) IsWalletActiveByIDGUID(id int, guid string) bool {
+	var active bool
+	db.QueryRow("SELECT is_active FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&active)
+
+	return active
+}
+
+// CreditWalletByIDGUID credit the wallet return newbalance or error
+func (db *DB) CreditWalletByIDGUID(id int, guid string, amt float64) (*float64, *float64, error) {
+	var oldBalance float64
+
+	uAt := time.Now().Local().Unix()
+
+	db.QueryRow("SELECT balance FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&oldBalance)
+	newBalance := oldBalance + amt
+
+	_, err := db.Exec("UPDATE wallets SET balance = $3, updated_at = $4 WHERE client_id = $1 AND address = $2", id, guid, newBalance, uAt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &oldBalance, &newBalance, nil
+}
+
+// DebitWalletByIDGUID debit the wallet return newbalance or error
+func (db *DB) DebitWalletByIDGUID(id int, guid string, amt float64) (*float64, *float64, error) {
+	var oldBalance float64
+
+	db.QueryRow("SELECT balance FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&oldBalance)
+
+	uAt := time.Now().Local().Unix()
+
+	newBalance := oldBalance - amt
+	_, err := db.Exec("UPDATE wallets SET balance = $3, updated_at = $4 WHERE client_id = $1 AND address = $2", id, guid, newBalance, uAt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &oldBalance, &newBalance, nil
+}
+
+// IsBalanceEnoughForDebit return bool if have enough balance for debit request
+func (db *DB) IsBalanceEnoughForDebit(id int, guid string, amt float64) bool {
+	var oldBalance float64
+
+	db.QueryRow("SELECT balance FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&oldBalance)
+	if amt > oldBalance {
+		return false
+	}
+
+	return true
 }

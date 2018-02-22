@@ -53,6 +53,9 @@ func (s *Server) router(port string) {
 	r.HandleFunc("/v1/{uuid}/wallets/{guid}", h.WalletPutHandler).Methods("PUT")
 
 	// transaction routes
+	r.HandleFunc("/v1/{uuid}/transaction/{guid}", h.GetAllTransactionHandler).Methods("GET")
+	r.HandleFunc("/v1/{uuid}/transaction/{guid}/credit", h.CreditPostHandler).Methods("POST")
+	r.HandleFunc("/v1/{uuid}/transaction/{guid}/debit", h.DebitPostHandler).Methods("POST")
 
 	// inform that we are live
 	fmt.Println("e-Wallet is running on port: ", port)
