@@ -9,25 +9,24 @@ import (
 
 // Wallet class
 type Wallet struct {
-	ID        int     `json:"-"`
-	Address   string  `json:"address"`
-	ClientID  int     `json:"clientID"`
-	UserID    int     `json:"userID"`
-	Balance   float64 `json:"balance"`
-	FundType  string  `json:"fundType"`
-	Tag       string  `json:"tag"`
-	IsActive  *bool   `json:"isActive,omitempty"`
-	createdAT int
-	updatedAT int
-	deletedAt int
+	ID        int       `json:"-"`
+	Address   string    `json:"address"`
+	ClientID  int       `json:"clientID"`
+	UserID    int       `json:"userID"`
+	Balance   float64   `json:"balance"`
+	FundType  string    `json:"fundType"`
+	Tag       string    `json:"tag"`
+	IsActive  *bool     `json:"isActive,omitempty"`
+	CreatedAT time.Time `json:"createdAt,omitempty"`
+	UpdatedAT time.Time `json:"updatedAt,omitempty"`
 }
 
 // CreateWallet create wallet for a Subscribers/Users of the Client
 func (db *DB) CreateWallet(wallet *Wallet) (int, error) {
 	var lastInsertID int
 
-	cAt := time.Now().Local().Unix()
-	uAt := time.Now().Local().Unix()
+	cAt := time.Now().Local()
+	uAt := time.Now().Local()
 	uid := xid.New()
 
 	err := db.QueryRow("INSERT INTO wallets (address, client_id, user_id, balance, fund_type, tag, created_at, updated_at) "+
@@ -88,7 +87,7 @@ func (db *DB) GetAllWallet(id int) ([]Wallet, error) {
 
 // UpdateWalletByIDGUID updates the Wallet Info
 func (db *DB) UpdateWalletByIDGUID(id int, guid string, wallet *Wallet) (int64, error) {
-	uAt := time.Now().Local().Unix()
+	uAt := time.Now().Local()
 
 	r, err := db.Exec("UPDATE wallets SET tag = $3, fund_type = $4, is_active = $5, updated_at = $6 "+
 		" WHERE client_id = $1 AND address = $2;", id, guid, &wallet.Tag, &wallet.FundType, &wallet.IsActive, uAt)
@@ -123,7 +122,7 @@ func (db *DB) IsWalletActiveByIDGUID(id int, guid string) bool {
 func (db *DB) CreditWalletByIDGUID(id int, guid string, amt float64) (*float64, *float64, error) {
 	var oldBalance float64
 
-	uAt := time.Now().Local().Unix()
+	uAt := time.Now().Local()
 
 	db.QueryRow("SELECT balance FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&oldBalance)
 	newBalance := oldBalance + amt
@@ -142,7 +141,7 @@ func (db *DB) DebitWalletByIDGUID(id int, guid string, amt float64) (*float64, *
 
 	db.QueryRow("SELECT balance FROM wallets WHERE client_id = $1 AND address = $2", id, guid).Scan(&oldBalance)
 
-	uAt := time.Now().Local().Unix()
+	uAt := time.Now().Local()
 
 	newBalance := oldBalance - amt
 	_, err := db.Exec("UPDATE wallets SET balance = $3, updated_at = $4 WHERE client_id = $1 AND address = $2", id, guid, newBalance, uAt)

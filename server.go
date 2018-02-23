@@ -47,15 +47,15 @@ func (s *Server) router(port string) {
 	r.HandleFunc("/v1/clients/{uuid}", h.ClientPutHandler).Methods("PUT")
 
 	// wallet routes
-	r.HandleFunc("/v1/{uuid}/wallets", h.WalletGetAllHandler).Methods("GET")
-	r.HandleFunc("/v1/{uuid}/wallets", h.WalletPostHandler).Methods("POST")
-	r.HandleFunc("/v1/{uuid}/wallets/{guid}", h.WalletGetHandler).Methods("GET")
-	r.HandleFunc("/v1/{uuid}/wallets/{guid}", h.WalletPutHandler).Methods("PUT")
+	r.Handle("/v1/{uuid}/wallets", h.WithTokenMiddleware(http.HandlerFunc(h.WalletGetAllHandler))).Methods("GET")
+	r.Handle("/v1/{uuid}/wallets", h.WithTokenMiddleware(http.HandlerFunc(h.WalletPostHandler))).Methods("POST")
+	r.Handle("/v1/{uuid}/wallets/{guid}", h.WithTokenMiddleware(http.HandlerFunc(h.WalletGetHandler))).Methods("GET")
+	r.Handle("/v1/{uuid}/wallets/{guid}", h.WithTokenMiddleware(http.HandlerFunc(h.WalletPutHandler))).Methods("PUT")
 
 	// transaction routes
-	r.HandleFunc("/v1/{uuid}/transaction/{guid}", h.GetAllTransactionHandler).Methods("GET")
-	r.HandleFunc("/v1/{uuid}/transaction/{guid}/credit", h.CreditPostHandler).Methods("POST")
-	r.HandleFunc("/v1/{uuid}/transaction/{guid}/debit", h.DebitPostHandler).Methods("POST")
+	r.Handle("/v1/{uuid}/transaction/{guid}", h.WithTokenMiddleware(http.HandlerFunc(h.GetAllTransactionHandler))).Methods("GET")
+	r.Handle("/v1/{uuid}/transaction/{guid}/credit", h.WithTokenMiddleware(http.HandlerFunc(h.CreditPostHandler))).Methods("POST")
+	r.Handle("/v1/{uuid}/transaction/{guid}/debit", h.WithTokenMiddleware(http.HandlerFunc(h.DebitPostHandler))).Methods("POST")
 
 	// inform that we are live
 	fmt.Println("e-Wallet is running on port: ", port)

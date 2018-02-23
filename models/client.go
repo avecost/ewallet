@@ -10,24 +10,24 @@ import (
 // Client class
 type Client struct {
 	id        int
-	UUID      string `json:"uuid"`
-	Name      string `json:"name"`
-	Token     string `json:"token"`
-	Address   string `json:"address"`
-	URL       string `json:"url"`
-	Reference string `json:"reference"`
-	IsActive  bool   `json:"isActive"`
-	createdAt int
-	updatedAt int
-	deletedAt int
+	UUID      string    `json:"uuid"`
+	Name      string    `json:"name"`
+	Token     string    `json:"token"`
+	Address   string    `json:"address"`
+	URL       string    `json:"url"`
+	Reference string    `json:"reference"`
+	IsActive  bool      `json:"isActive"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	DeletedAt time.Time `json:"deletedAt"`
 }
 
 // CreateClient create new client in DB
 func (db *DB) CreateClient(client *Client) (int, error) {
 	var lastInsertID int
 
-	cAt := time.Now().Local().Unix()
-	uAt := time.Now().Local().Unix()
+	cAt := time.Now().Local()
+	uAt := time.Now().Local()
 	uid := xid.New()
 
 	err := db.QueryRow("INSERT INTO clients (uuid, name, token, address, url, reference, created_at, updated_at) "+
@@ -95,7 +95,7 @@ func (db *DB) GetClientByID(id int) (*Client, error) {
 	var c Client
 	err := db.QueryRow("SELECT id, uuid, name, token, address, url, reference, is_active, created_at, updated_at, deleted_at "+
 		" FROM clients WHERE id=$1;", id).Scan(
-		&c.id, &c.UUID, &c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, &c.IsActive, &c.createdAt, &c.updatedAt, &c.deletedAt)
+		&c.id, &c.UUID, &c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, &c.IsActive, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (db *DB) GetClientByUUID(uuid string) (*Client, error) {
 	var c Client
 	err := db.QueryRow("SELECT id, uuid, name, token, address, url, reference, is_active, created_at, updated_at, deleted_at "+
 		" FROM clients WHERE uuid=$1;", uuid).Scan(
-		&c.id, &c.UUID, &c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, &c.IsActive, &c.createdAt, &c.updatedAt, &c.deletedAt)
+		&c.id, &c.UUID, &c.Name, &c.Token, &c.Address, &c.URL, &c.Reference, &c.IsActive, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +127,17 @@ func (db *DB) GetClientIDByUUID(uuid string) (int, error) {
 	return clientID, nil
 }
 
+// GetClientIDByUUIDToken if existing return the ID
+func (db *DB) GetClientIDByUUIDToken(uuid, token string) (int, error) {
+	var id int
+	err := db.QueryRow("SELECT id FROM clients WHERE uuid=$1 AND token=$2;", uuid, token).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
 // IsValidUUIDToken verify if UUID and token is valid
 func (db *DB) IsValidUUIDToken(uuid, token string) bool {
 	var count int
@@ -136,4 +147,12 @@ func (db *DB) IsValidUUIDToken(uuid, token string) bool {
 	}
 
 	return true
+}
+
+// IsClientActiveByUUIDToken check if client is active
+func (db *DB) IsClientActiveByUUIDToken(uuid, token string) bool {
+	var isActive bool
+	db.QueryRow("SELECT is_active FROM clients WHERE uuid=$1 AND token=$2;", uuid, token).Scan(&isActive)
+
+	return isActive
 }
