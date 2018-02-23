@@ -35,6 +35,9 @@ func (s *Server) Run(addr string) {
 }
 
 func (s *Server) router(port string) {
+	certPath := "server.pem"
+	keyPath := "server.key"
+
 	// create handler object
 	h := handler.NewHandler(s.db)
 
@@ -60,7 +63,8 @@ func (s *Server) router(port string) {
 	// inform that we are live
 	fmt.Println("e-Wallet is running on port: ", port)
 
-	err := http.ListenAndServe(port, r)
+	// err := http.ListenAndServe(port, r)
+	err := http.ListenAndServeTLS(port, certPath, keyPath, r)
 	if err != nil {
 		log.Fatal("Server Error: ", err)
 	}
